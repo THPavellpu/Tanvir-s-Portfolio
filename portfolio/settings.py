@@ -62,12 +62,17 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'portfolio.wsgi.application'
-
 DATABASES = {
     'default': dj_database_url.parse(
-        "postgresql://postgres.obtejtqvwyayugehvtmk:thplpu@dbsb@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres"
+        os.environ.get("DATABASE_URL")
     )
 }
+
+# DATABASES = {
+#     'default': dj_database_url.parse(
+#         "postgresql://postgres.obtejtqvwyayugehvtmk:thplpu@dbsb@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres"
+#     )
+# }
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.sqlite3',
