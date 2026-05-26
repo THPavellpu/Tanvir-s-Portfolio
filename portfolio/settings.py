@@ -68,17 +68,7 @@ DATABASES = {
     )
 }
 
-# DATABASES = {
-#     'default': dj_database_url.parse(
-#         "postgresql://postgres.obtejtqvwyayugehvtmk:thplpu@dbsb@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres"
-#     )
-# }
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
+
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': 'dzi2c0noo',
     'API_KEY': '521329172494266',
