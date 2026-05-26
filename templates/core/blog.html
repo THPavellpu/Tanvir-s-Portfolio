@@ -1,0 +1,46 @@
+{% extends 'core/base.html' %}
+{% block title %}Blog{% endblock %}
+{% block content %}
+<section class="section-padding" style="background:var(--bg-secondary);">
+  <div class="container">
+    <h2 class="section-title">Blog</h2>
+
+    {% if featured_post %}
+      <div style="margin-bottom:2rem; padding:1.25rem; border-radius:1rem; border:1px solid var(--bg-tertiary); background:var(--bg-primary);">
+        <div class="gradient-text" style="font-weight:800; margin-bottom:0.5rem;">Featured</div>
+        <a style="font-weight:700;" href="/blog/{{ featured_post.slug }}/">{{ featured_post.title }}</a>
+      </div>
+    {% endif %}
+
+    <div class="blog-grid">
+      {% for post in posts %}
+        <article class="blog-card">
+          <div class="blog-content">
+            {% if post.featured_image %}
+              <div class="blog-image" style="margin-bottom:0.75rem;">
+                <img
+                  src="{{ post.featured_image.url }}"
+                  alt="{{ post.title }} featured image"
+                  style="width:100%;height:200px;object-fit:cover;border-radius:0.75rem;border:1px solid var(--bg-tertiary);" />
+              </div>
+            {% endif %}
+
+            <div class="blog-meta">
+              <span class="blog-category">{{ post.category.name }}</span>
+              <span>{{ post.published_at|date:"M d, Y" }}</span>
+            </div>
+            <h3 class="blog-title"><a href="/blog/{{ post.slug }}/">{{ post.title }}</a></h3>
+            <p class="blog-excerpt">{{ post.content|striptags|truncatewords:30 }}</p>
+            <a class="read-more" href="/blog/{{ post.slug }}/">Read more →</a>
+          </div>
+        </article>
+      {% empty %}
+        <p>No posts found.</p>
+      {% endfor %}
+
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+

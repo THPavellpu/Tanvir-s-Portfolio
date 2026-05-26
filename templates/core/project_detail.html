@@ -1,0 +1,21 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ project.title }}{% endblock %}
+{% block content %}
+<section class="section-padding" style="background:var(--bg-primary);">
+  <div class="container">
+    <a href="/projects/" style="color:var(--primary); font-weight:700;">&larr; Back to projects</a>
+    <h2 class="section-title" style="text-align:left; margin-top:1.25rem;">{{ project.title }}</h2>
+
+    <div style="padding:1.5rem; border-radius:1rem; border:1px solid var(--bg-tertiary); background:var(--bg-secondary);">
+      <p style="margin-bottom:1rem; font-size:1.05rem; color:var(--text-primary);">{{ project.description }}</p>
+
+      {% if project.detailed_description %}
+        <h3 style="margin-bottom:0.75rem;">Details</h3>
+        <div style="color:var(--text-secondary);">{{ project.detailed_description|safe }}</div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+

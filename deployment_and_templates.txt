@@ -1,0 +1,452 @@
+# FILE: Procfile - Render Deployment
+web: gunicorn portfolio.wsgi:application
+
+# FILE: build.sh - Render Build Script
+#!/bin/bash
+set -o errexit
+
+pip install -r requirements.txt
+python manage.py collectstatic --noinput
+python manage.py migrate
+
+# FILE: runtime.txt - Python Version
+python-3.11.7
+
+# FILE: .gitignore - Git Ignore Rules
+*.pyc
+__pycache__/
+*.egg-info/
+dist/
+build/
+.env
+.venv
+env/
+venv/
+ENV/
+db.sqlite3
+/media/
+/staticfiles/
+/logs/
+.DS_Store
+*.log
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.coverage
+htmlcov/
+.pytest_cache/
+instance/
+.webassets-cache
+node_modules/
+package-lock.json
+yarn.lock
+
+# FILE: deployment/nginx.conf - Nginx Configuration
+upstream portfolio_app {
+    server web:8000;
+}
+
+server {
+    listen 80;
+    server_name yourdomain.com www.yourdomain.com;
+    client_max_body_size 10M;
+
+    location / {
+        proxy_pass http://portfolio_app;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect off;
+    }
+
+    location /static/ {
+        alias /app/staticfiles/;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location /media/ {
+        alias /app/media/;
+        expires 7d;
+    }
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+
+    # Gzip compression
+    gzip on;
+    gzip_types text/plain text/css text/javascript application/json application/javascript;
+    gzip_min_length 1000;
+}
+
+# FILE: deployment/Dockerfile - Docker Configuration
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
+
+COPY . .
+
+RUN python manage.py collectstatic --noinput
+
+CMD ["gunicorn", "portfolio.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "4"]
+
+# FILE: deployment/docker-compose.yml - Docker Compose
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: portfolio_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  web:
+    build: .
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - ALLOWED_HOSTS=localhost,127.0.0.1
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/portfolio_db
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
+
+# FILE: deployment/gunicorn.conf.py - Gunicorn Configuration
+import multiprocessing
+
+bind = "0.0.0.0:8000"
+workers = multiprocessing.cpu_count() * 2 + 1
+worker_class = "sync"
+worker_connections = 1000
+timeout = 30
+keepalive = 2
+max_requests = 1000
+max_requests_jitter = 100
+preload_app = True
+access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(q)s"'
+
+# FILE: core/management/commands/init_portfolio.py - Initialization Command
+from django.core.management.base import BaseCommand
+from core.models import SiteConfiguration, SkillCategory, ProjectCategory, BlogCategory, SocialLink
+
+class Command(BaseCommand):
+    help = 'Initialize portfolio with default data'
+
+    def handle(self, *args, **kwargs):
+        # Create site configuration
+        config, created = SiteConfiguration.objects.get_or_create(
+            id=1,
+            defaults={
+                'site_name': 'My Portfolio',
+                'tagline': 'Full Stack Developer & Creative Technologist',
+                'bio': 'Building amazing web experiences and solving complex problems.',
+                'meta_description': 'Professional portfolio showcasing projects and skills',
+            }
+        )
+        if created:
+            self.stdout.write(self.style.SUCCESS('Created default site configuration'))
+
+        # Create skill categories
+        categories = ['Backend', 'Frontend', 'Database', 'DevOps', 'Tools']
+        for cat_name in categories:
+            category, created = SkillCategory.objects.get_or_create(
+                name=cat_name,
+                defaults={'display_order': len(SkillCategory.objects.all())}
+            )
+            if created:
+                self.stdout.write(f'Created skill category: {cat_name}')
+
+        # Create project categories
+        proj_cats = ['Web Application', 'Mobile App', 'Machine Learning']
+        for proj_cat in proj_cats:
+            category, created = ProjectCategory.objects.get_or_create(
+                name=proj_cat
+            )
+            if created:
+                self.stdout.write(f'Created project category: {proj_cat}')
+
+        # Create blog categories
+        blog_cats = ['Technology', 'Tutorial', 'News']
+        for blog_cat in blog_cats:
+            category, created = BlogCategory.objects.get_or_create(
+                name=blog_cat
+            )
+            if created:
+                self.stdout.write(f'Created blog category: {blog_cat}')
+
+        self.stdout.write(self.style.SUCCESS('Portfolio initialization complete'))
+
+# FILE: Additional templates/core/projects.html
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Projects - {{ site_config.site_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>My Projects</h1>
+    <p>Collection of my recent and featured work</p>
+</div>
+
+<section class="projects-filters">
+    <div class="container">
+        <div class="filter-buttons">
+            <button class="filter-btn active" data-filter="all">All Projects</button>
+            {% for category in categories %}
+            <button class="filter-btn" data-filter="{{ category.slug }}">{{ category.name }}</button>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="section-padding">
+    <div class="container">
+        <div class="projects-grid">
+            {% for project in projects %}
+            {% include 'core/includes/project_card.html' %}
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <nav class="pagination">
+            {% if page_obj.has_previous %}
+            <a href="?page=1" class="btn btn-sm">« First</a>
+            <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-sm">‹ Previous</a>
+            {% endif %}
+
+            <span class="page-info">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </span>
+
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="btn btn-sm">Next ›</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}" class="btn btn-sm">Last »</a>
+            {% endif %}
+        </nav>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+
+# FILE: templates/core/project_detail.html
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ project.title }} - {{ site_config.site_name }}{% endblock %}
+
+{% block content %}
+<div class="container project-detail">
+    <div class="breadcrumb">
+        <a href="{% url 'core:projects' %}">Projects</a>
+        <span>/</span>
+        <span>{{ project.title }}</span>
+    </div>
+
+    <article class="project-article">
+        <header class="project-header">
+            <h1>{{ project.title }}</h1>
+            <div class="project-meta">
+                <span class="date">{{ project.created_at|date:"M d, Y" }}</span>
+                <span class="type">{{ project.get_project_type_display }}</span>
+                <span class="status">{{ project.get_status_display }}</span>
+            </div>
+        </header>
+
+        <div class="project-image-section">
+            {% if project.thumbnail %}
+            <img src="{{ project.thumbnail.url }}" alt="{{ project.title }}" class="hero-image">
+            {% endif %}
+        </div>
+
+        <div class="project-content">
+            <div class="project-main">
+                <section class="section-block">
+                    <h2>Overview</h2>
+                    <p>{{ project.description }}</p>
+                </section>
+
+                {% if project.detailed_description %}
+                <section class="section-block">
+                    <h2>Details</h2>
+                    {{ project.detailed_description|linebreaks }}
+                </section>
+                {% endif %}
+
+                {% if project.technologies.all %}
+                <section class="section-block">
+                    <h2>Technologies Used</h2>
+                    <div class="tech-list">
+                        {% for tech in project.technologies.all %}
+                        <span class="tech-item" style="background-color: {{ tech.color }}">{{ tech.name }}</span>
+                        {% endfor %}
+                    </div>
+                </section>
+                {% endif %}
+            </div>
+
+            <aside class="project-sidebar">
+                <div class="sidebar-card">
+                    <h3>Links</h3>
+                    <ul class="links-list">
+                        {% if project.live_url %}
+                        <li>
+                            <a href="{{ project.live_url }}" target="_blank" class="btn btn-primary btn-sm">
+                                <i class="fas fa-globe"></i> Live Demo
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if project.github_url %}
+                        <li>
+                            <a href="{{ project.github_url }}" target="_blank" class="btn btn-sm">
+                                <i class="fab fa-github"></i> GitHub
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+
+                <div class="sidebar-card">
+                    <h3>Project Stats</h3>
+                    <dl>
+                        <dt>Views:</dt>
+                        <dd>{{ project.views }}</dd>
+                        <dt>Status:</dt>
+                        <dd>{{ project.get_status_display }}</dd>
+                        <dt>Year:</dt>
+                        <dd>{{ project.created_at|date:"Y" }}</dd>
+                    </dl>
+                </div>
+            </aside>
+        </div>
+    </article>
+</div>
+
+<section class="related-projects section-padding">
+    <div class="container">
+        <h2>Other Projects</h2>
+        <div class="projects-grid">
+            {% for related in related_projects %}
+            {% include 'core/includes/project_card.html' with project=related %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+# FILE: templates/core/blog.html
+{% extends 'base.html' %}
+
+{% block title %}Blog - {{ site_config.site_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Blog</h1>
+    <p>Thoughts, tutorials, and insights on web development</p>
+</div>
+
+<section class="section-padding">
+    <div class="container">
+        <div class="blog-grid">
+            {% for post in posts %}
+            {% include 'core/includes/blog_card.html' %}
+            {% endfor %}
+        </div>
+
+        {% if is_paginated %}
+        <nav class="pagination">
+            <!-- Pagination code -->
+        </nav>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+
+# FILE: templates/core/contact.html
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Contact - {{ site_config.site_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Get In Touch</h1>
+    <p>Have a project idea or want to collaborate? Let's talk!</p>
+</div>
+
+<section class="section-padding">
+    <div class="container contact-section">
+        <div class="contact-form-wrapper">
+            <form method="post" class="contact-form">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <button type="submit" class="btn btn-primary">Send Message</button>
+            </form>
+        </div>
+
+        <div class="contact-info">
+            {% if site_config.email %}
+            <div class="info-card">
+                <i class="fas fa-envelope"></i>
+                <h3>Email</h3>
+                <a href="mailto:{{ site_config.email }}">{{ site_config.email }}</a>
+            </div>
+            {% endif %}
+
+            {% if site_config.phone %}
+            <div class="info-card">
+                <i class="fas fa-phone"></i>
+                <h3>Phone</h3>
+                <a href="tel:{{ site_config.phone }}">{{ site_config.phone }}</a>
+            </div>
+            {% endif %}
+
+            <div class="info-card">
+                <i class="fas fa-map-marker-alt"></i>
+                <h3>Social</h3>
+                <div class="social-links">
+                    {% for link in social_links %}
+                    <a href="{{ link.url }}" target="_blank" title="{{ link.get_platform_display }}">
+                        <i class="fab fa-{{ link.platform }}"></i>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

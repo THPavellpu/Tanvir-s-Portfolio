@@ -1,0 +1,58 @@
+{% extends 'core/base.html' %}
+{% block title %}Resume{% endblock %}
+{% block content %}
+<section class="section-padding" style="background:var(--bg-primary);">
+  <div class="container">
+    <h2 class="section-title">Resume</h2>
+
+    <div style="padding:1.5rem; border-radius:1rem; border:1px solid var(--bg-tertiary); background:var(--bg-secondary);">
+      {% if resume %}
+      <p style="color:var(--text-secondary);">Current resume:</p>
+      <a class="btn btn-primary" href="{% url 'core:resume_download' %}">Download PDF</a>
+      {% else %}
+        <p style="color:var(--text-secondary);">No current resume uploaded.</p>
+      {% endif %}
+    </div>
+
+    <div style="margin-top:1.5rem;">
+      <h3>Experience</h3>
+      {% for e in experiences %}
+        <div style="padding:1rem;border-radius:0.75rem;border:1px solid var(--bg-tertiary);background:var(--bg-primary);margin-bottom:0.75rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <strong>{{ e.title }}</strong>
+              <div style="color:var(--text-secondary);">{{ e.company_or_issuer }} — {{ e.get_experience_type_display }}</div>
+            </div>
+            <div style="color:var(--text-secondary);">{% if e.start_date %}{{ e.start_date|date:"M Y" }}{% endif %} — {% if e.end_date %}{{ e.end_date|date:"M Y" }}{% else %}{% if e.is_current %}Present{% endif %}{% endif %}</div>
+          </div>
+          {% if e.role %}<div style="margin-top:0.5rem;">Role: {{ e.role }}</div>{% endif %}
+          {% if e.skills_learned %}<div style="margin-top:0.25rem;color:var(--text-secondary);">Skills learned: {{ e.skills_learned }}</div>{% endif %}
+          {% if e.description %}<div style="margin-top:0.5rem;">{{ e.description }}</div>{% endif %}
+        </div>
+      {% empty %}
+        <p>No experience added.</p>
+      {% endfor %}
+
+      <h3 id="certifications" style="margin-top:1.25rem;">Certifications</h3>
+      {% for c in certifications %}
+        <div style="padding:1rem;border-radius:0.75rem;border:1px solid var(--bg-tertiary);background:var(--bg-secondary);margin-bottom:0.75rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <strong>{{ c.name }}</strong>
+              <div style="color:var(--text-secondary);">{{ c.organization }} — {{ c.get_platform_display }}</div>
+            </div>
+            <div style="color:var(--text-secondary);">{% if c.issued_date %}{{ c.issued_date|date:"M Y" }}{% endif %}</div>
+          </div>
+          {% if c.certificate_url %}
+            <div style="margin-top:0.5rem;"><a class="link-btn" href="{{ c.certificate_url }}" target="_blank" rel="noopener">Open Certificate</a></div>
+          {% endif %}
+        </div>
+      {% empty %}
+        <p>No certifications added.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+

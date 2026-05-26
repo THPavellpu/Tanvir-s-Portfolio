@@ -1,0 +1,73 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}{{ site_name|default:"Tanvir's Portfolio" }}{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header class="navbar">
+    <div class="navbar-content">
+      <div class="navbar-brand">
+        <div class="logo">
+          <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--secondary));display:flex;align-items:center;justify-content:center;font-weight:800;">{{ site_name|default:"P"|slice:':1' }}</div>
+          <span>{{ site_name|default:"Tanvir's Portfolio" }}</span>
+        </div>
+      </div>
+
+      <button class="navbar-toggle" id="navbar-toggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+
+      <nav class="navbar-menu" id="navbar-menu">
+        <ul class="navbar-list">
+          <li><a class="nav-link" href="/">Home</a></li>
+          <li><a class="nav-link" href="/projects/">Projects</a></li>
+          <li><a class="nav-link" href="/blog/">Blog</a></li>
+          <li><a class="nav-link" href="/resume/">Resume</a></li>
+          <li><a class="nav-link" href="/contact/">Contact</a></li>
+        </ul>
+      </nav>
+
+      <button class="theme-toggle" type="button" id="theme-toggle" title="Toggle theme">☾</button>
+    </div>
+  </header>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom">© {{ site_name|default:"Portfolio" }}. Built by Tanvir Hossen Pavel.</div>
+    </div>
+  </footer>
+
+  <script src="{% static 'js/main.js' %}"></script>
+  <script>
+    (function(){
+      const body = document.body;
+      const toggle = document.getElementById('theme-toggle');
+      const key = 'theme';
+      const saved = localStorage.getItem(key);
+      if(saved === 'light') body.classList.add('light-mode');
+
+      if(toggle){
+        toggle.addEventListener('click', function(){
+          body.classList.toggle('light-mode');
+          const isLight = body.classList.contains('light-mode');
+          localStorage.setItem(key, isLight ? 'light' : 'dark');
+          toggle.textContent = isLight ? '☀' : '☾';
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
+

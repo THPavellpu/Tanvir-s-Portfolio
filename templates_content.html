@@ -1,0 +1,340 @@
+{# FILE: templates/base.html #}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a1a1a">
+    
+    <!-- SEO Meta Tags -->
+    <title>{% block title %}{{ site_config.site_name }} - Portfolio{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}{{ site_config.meta_description }}{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}{{ site_config.meta_keywords }}{% endblock %}">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="{% block og_title %}{{ site_config.site_name }}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{{ site_config.meta_description }}{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{% if site_config.profile_image %}{{ site_config.profile_image.url }}{% endif %}{% endblock %}">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}{{ site_config.site_name }}{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}{{ site_config.meta_description }}{% endblock %}">
+    
+    <!-- Canonical -->
+    <link rel="canonical" href="{% block canonical %}{{ request.build_absolute_uri }}{% endblock %}">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    {% block extra_css %}{% endblock %}
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+</head>
+<body class="dark-mode" data-theme="dark">
+    <!-- Navigation -->
+    {% include 'core/includes/navbar.html' %}
+    
+    <!-- Main Content -->
+    <main id="main-content">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    {% include 'core/includes/footer.html' %}
+    
+    <!-- Theme Toggle Script -->
+    <script>
+        const themeToggle = document.getElementById('theme-toggle');
+        const html = document.documentElement;
+        const body = document.body;
+        
+        // Initialize theme from localStorage
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        setTheme(savedTheme);
+        
+        function setTheme(theme) {
+            if (theme === 'light') {
+                html.style.colorScheme = 'light';
+                body.classList.remove('dark-mode');
+                body.classList.add('light-mode');
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.style.colorScheme = 'dark';
+                body.classList.remove('light-mode');
+                body.classList.add('dark-mode');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+        
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = localStorage.getItem('theme') || 'dark';
+                setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+            });
+        }
+    </script>
+    
+    <!-- JavaScript -->
+    <script src="{% static 'js/main.js' %}" defer></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
+
+{# FILE: templates/core/includes/navbar.html #}
+<nav class="navbar">
+    <div class="container navbar-content">
+        <div class="navbar-brand">
+            <a href="{% url 'core:index' %}" class="logo">
+                {% if site_config.profile_image %}
+                    <img src="{{ site_config.profile_image.url }}" alt="Logo" class="logo-image">
+                {% else %}
+                    <span class="logo-text">{{ site_config.site_name }}</span>
+                {% endif %}
+            </a>
+        </div>
+        
+        <button class="navbar-toggle" id="navbar-toggle" aria-label="Toggle menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        
+        <div class="navbar-menu" id="navbar-menu">
+            <ul class="navbar-list">
+                <li><a href="{% url 'core:index' %}" class="nav-link">Home</a></li>
+                <li><a href="{% url 'core:projects' %}" class="nav-link">Projects</a></li>
+                <li><a href="{% url 'core:blog' %}" class="nav-link">Blog</a></li>
+                <li><a href="{% url 'core:resume' %}" class="nav-link">Resume</a></li>
+                <li><a href="{% url 'core:contact' %}" class="nav-link">Contact</a></li>
+            </ul>
+            
+            <div class="navbar-actions">
+                <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+{# FILE: templates/core/includes/footer.html #}
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>{{ site_config.site_name }}</h3>
+                <p>{{ site_config.tagline }}</p>
+                
+                <div class="social-links">
+                    {% for link in social_links %}
+                        <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" 
+                           class="social-link" title="{{ link.get_platform_display }}">
+                            <i class="fab fa-{{ link.platform }}"></i>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="footer-section">
+                <h4>Navigation</h4>
+                <ul>
+                    <li><a href="{% url 'core:index' %}">Home</a></li>
+                    <li><a href="{% url 'core:projects' %}">Projects</a></li>
+                    <li><a href="{% url 'core:blog' %}">Blog</a></li>
+                    <li><a href="{% url 'core:resume' %}">Resume</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h4>Contact</h4>
+                {% if site_config.email %}
+                    <p><i class="fas fa-envelope"></i> <a href="mailto:{{ site_config.email }}">{{ site_config.email }}</a></p>
+                {% endif %}
+                {% if site_config.phone %}
+                    <p><i class="fas fa-phone"></i> <a href="tel:{{ site_config.phone }}">{{ site_config.phone }}</a></p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>&copy; {% now 'Y' %} {{ site_config.site_name }}. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+{# FILE: templates/core/index.html - Hero Section #}
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <h1 class="hero-title animate-fade-in">
+                Hi, I'm <span class="gradient-text">{{ site_config.site_name }}</span>
+            </h1>
+            <p class="hero-subtitle animate-fade-in-delay">
+                {{ site_config.tagline }}
+            </p>
+            <p class="hero-description animate-fade-in-delay-2">
+                {{ site_config.bio|truncatewords:50 }}
+            </p>
+            
+            <div class="hero-cta animate-fade-in-delay-3">
+                <a href="{% url 'core:projects' %}" class="btn btn-primary">
+                    View My Projects
+                </a>
+                <a href="{% url 'core:contact' %}" class="btn btn-secondary">
+                    Get In Touch
+                </a>
+            </div>
+            
+            <div class="hero-social">
+                {% for link in social_links %}
+                    <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" 
+                       class="social-icon" title="{{ link.get_platform_display }}">
+                        <i class="fab fa-{{ link.platform }}"></i>
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+        
+        {% if site_config.profile_image %}
+        <div class="hero-image animate-slide-in">
+            <img src="{{ site_config.profile_image.url }}" alt="Profile" class="profile-image">
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Skills Section -->
+<section class="skills-section section-padding">
+    <div class="container">
+        <h2 class="section-title">Skills & Expertise</h2>
+        
+        <div class="skills-grid">
+            {% for skill in featured_skills %}
+            <div class="skill-card" data-category="{{ skill.category.slug }}">
+                <div class="skill-header">
+                    {% if skill.icon %}
+                        <i class="{{ skill.icon }}"></i>
+                    {% else %}
+                        <span class="skill-initial">{{ skill.name.0 }}</span>
+                    {% endif %}
+                    <h3>{{ skill.name }}</h3>
+                </div>
+                <p class="skill-category">{{ skill.category.name }}</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ skill.proficiency|multiply:25 }}%"></div>
+                </div>
+                <span class="proficiency-label">{{ skill.get_proficiency_display }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Featured Projects Section -->
+<section class="projects-section section-padding">
+    <div class="container">
+        <h2 class="section-title">Featured Projects</h2>
+        
+        <div class="projects-grid">
+            {% for project in featured_projects %}
+            {% include 'core/includes/project_card.html' %}
+            {% endfor %}
+        </div>
+        
+        <div class="section-cta">
+            <a href="{% url 'core:projects' %}" class="btn btn-primary">View All Projects</a>
+        </div>
+    </div>
+</section>
+
+<!-- Blog Section -->
+<section class="blog-section section-padding">
+    <div class="container">
+        <h2 class="section-title">Latest Articles</h2>
+        
+        <div class="blog-grid">
+            {% for post in recent_blog %}
+            {% include 'core/includes/blog_card.html' %}
+            {% endfor %}
+        </div>
+        
+        <div class="section-cta">
+            <a href="{% url 'core:blog' %}" class="btn btn-primary">Read More Articles</a>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{# FILE: templates/core/includes/project_card.html #}
+<article class="project-card" data-type="{{ project.project_type }}">
+    <div class="project-image">
+        <img src="{{ project.thumbnail.url }}" alt="{{ project.title }}" loading="lazy">
+        {% if project.is_featured %}
+        <div class="featured-badge">⭐ Featured</div>
+        {% endif %}
+    </div>
+    
+    <div class="project-content">
+        <h3 class="project-title">{{ project.title }}</h3>
+        <p class="project-description">{{ project.description|truncatewords:20 }}</p>
+        
+        <div class="project-tech">
+            {% for tech in project.technologies.all|slice:":5" %}
+            <span class="tech-badge" style="background-color: {{ tech.color }}">{{ tech.name }}</span>
+            {% endfor %}
+        </div>
+        
+        <div class="project-links">
+            {% if project.live_url %}
+            <a href="{{ project.live_url }}" target="_blank" class="link-btn">
+                <i class="fas fa-external-link-alt"></i> Live
+            </a>
+            {% endif %}
+            {% if project.github_url %}
+            <a href="{{ project.github_url }}" target="_blank" class="link-btn">
+                <i class="fab fa-github"></i> Code
+            </a>
+            {% endif %}
+            <a href="{{ project.get_absolute_url }}" class="link-btn">
+                <i class="fas fa-arrow-right"></i> Details
+            </a>
+        </div>
+    </div>
+</article>
+
+{# FILE: templates/core/includes/blog_card.html #}
+<article class="blog-card">
+    <div class="blog-image">
+        <img src="{{ post.featured_image.url }}" alt="{{ post.title }}" loading="lazy">
+    </div>
+    
+    <div class="blog-content">
+        <div class="blog-meta">
+            <span class="blog-category">{{ post.category.name }}</span>
+            <span class="blog-date">{{ post.published_at|date:'M d, Y' }}</span>
+            <span class="read-time">{{ post.reading_time }} min read</span>
+        </div>
+        
+        <h3 class="blog-title">{{ post.title }}</h3>
+        <p class="blog-excerpt">{{ post.excerpt|truncatewords:20 }}</p>
+        
+        <a href="{{ post.get_absolute_url }}" class="read-more">
+            Read Article <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+</article>
