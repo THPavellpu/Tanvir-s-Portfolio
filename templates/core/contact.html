@@ -1,16 +1,83 @@
 {% extends 'core/base.html' %}
 {% block title %}Contact{% endblock %}
 {% block content %}
-<section class="section-padding" style="background:var(--bg-secondary);">
+<section class="section-padding contact-page">
   <div class="container">
     <h2 class="section-title">Contact</h2>
 
-    <div style="padding:1.5rem; border-radius:1rem; border:1px solid var(--bg-tertiary); background:var(--bg-primary);">
-      <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button class="btn btn-primary" type="submit" style="margin-top:0.5rem; width:auto;">Send</button>
-      </form>
+    <div class="contact-grid">
+      <aside class="contact-card contact-info-card">
+        <span class="contact-badge">Let's build something great</span>
+        <h3 class="contact-heading">I’m here to help you launch your next project.</h3>
+        <p class="contact-text">Send a message with your idea, question, or collaboration request. I’ll get back to you quickly with a custom response.</p>
+
+        <div class="contact-details">
+          <div class="contact-detail-item">
+            <span class="contact-detail-icon">✉️</span>
+            <div>
+              <p class="detail-label">Email</p>
+              <a href="mailto:{{ site_config.email|default:'hello@example.com' }}">{{ site_config.email|default:'hello@example.com' }}</a>
+            </div>
+          </div>
+          <div class="contact-detail-item">
+            <span class="contact-detail-icon">📞</span>
+            <div>
+              <p class="detail-label">Phone</p>
+              <a href="tel:{{ site_config.phone|default:'+880123456789' }}">{{ site_config.phone|default:'+880123456789' }}</a>
+            </div>
+          </div>
+          <div class="contact-detail-item">
+            <span class="contact-detail-icon">🌍</span>
+            <div>
+              <p class="detail-label">Location</p>
+              <p>{{ site_config.tagline|default:'Remote / Worldwide' }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="contact-actions">
+          {% for social in social_links %}
+            <a class="btn btn-secondary" href="{{ social.url }}" target="_blank" rel="noopener">{{ social.platform|title }}</a>
+          {% endfor %}
+        </div>
+      </aside>
+
+      <section class="contact-card contact-form-card">
+        <div class="form-card-header">
+          <h3>Send a message</h3>
+          <p>Fill out the form and I’ll reply as soon as possible.</p>
+        </div>
+
+        <form method="post" action="" class="contact-form">
+          {% csrf_token %}
+          <div class="form-group">
+            {{ form.name.label_tag }}
+            {{ form.name }}
+            {{ form.name.errors }}
+          </div>
+          <div class="form-group">
+            {{ form.email.label_tag }}
+            {{ form.email }}
+            {{ form.email.errors }}
+          </div>
+          <div class="form-group">
+            {{ form.phone.label_tag }}
+            {{ form.phone }}
+            {{ form.phone.errors }}
+          </div>
+          <div class="form-group">
+            {{ form.subject.label_tag }}
+            {{ form.subject }}
+            {{ form.subject.errors }}
+          </div>
+          <div class="form-group">
+            {{ form.message.label_tag }}
+            {{ form.message }}
+            {{ form.message.errors }}
+          </div>
+          <button class="btn btn-primary" type="submit">Send Message</button>
+        </form>
+      </section>
     </div>
   </div>
 </section>
