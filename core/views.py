@@ -202,18 +202,25 @@ def ResumeDownloadView(request):
         pass
 
     # 2) Remote file URL fallback
+    # Important: Some browsers/CDNs may fail the fl_attachment URL.
+    # So we try fl_attachment first, then fall back to a plain redirect.
     try:
         file_url = resume.file.url
         filename = resume.title or "resume"
         if not any(filename.lower().endswith(ext) for ext in (".pdf", ".doc", ".docx")):
             filename += ".pdf"
 
-        # If it's Cloudinary, add fl_attachment to force download
-        if "cloudinary" in file_url and "fl_attachment" not in file_url and "upload/" in file_url:
-            file_url = file_url.replace("upload/", "upload/fl_attachment/")
+        if "cloudinary" in file_url and "upload/" in file_url:
+            candidate = file_url
+            if "fl_attachment" not in candidate:
+                candidate = candidate.replace("upload/", "upload/fl_attachment/", 1)
 
-        # Redirect is sufficient for browser download with fl_attachment.
-        # (Avoid streaming remote bytes to prevent timeouts/URL issues.)
+            # Attempt fl_attachment redirect first
+            resp = redirect(candidate)
+            resp["Content-Disposition"] = f'attachment; filename="{filename}"'
+            return resp
+
+        # Non-cloudinary (or already transformed) => plain redirect
         resp = redirect(file_url)
         resp["Content-Disposition"] = f'attachment; filename="{filename}"'
         return resp
