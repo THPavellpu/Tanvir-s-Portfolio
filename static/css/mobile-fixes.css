@@ -1,0 +1,26 @@
+/* Mobile-specific fixes: keep hero social icons horizontal and make contact section fully responsive */
+.hero-social{flex-direction:row !important;justify-content:center !important;gap:0.75rem}
+.hero-social .social-icon{flex:0 0 auto;min-width:40px;width:40px;height:40px;display:inline-flex}
+
+@media (max-width:768px){
+  /* ensure social icons remain inline when CTAs are stacked */
+  .hero-social{justify-content:flex-start}
+  .hero-social .social-icon{width:44px;height:44px;min-width:44px}
+}
+
+/* Contact responsiveness improvements */
+.contact-grid{grid-template-columns:1fr;gap:1rem}
+.contact-card{width:100%}
+.contact-info-card{order:0}
+.contact-form-card{order:1}
+.contact-form input,.contact-form textarea,.contact-form select,.contact-form .form-control{width:100%;box-sizing:border-box}
+.contact-actions{justify-content:flex-start}
+.contact-detail-item{align-items:center}
+
+@media (max-width:480px){
+  .contact-grid{display:flex;flex-direction:column;gap:0.75rem}
+  .contact-card{padding:1rem}
+  .contact-form .form-group{gap:0.5rem}
+  .contact-submit-btn{width:100%}
+  .contact-actions{gap:0.5rem}
+}
