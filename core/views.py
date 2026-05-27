@@ -32,13 +32,28 @@ class IndexView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["featured_projects"] = Project.objects.filter(is_featured=True)[:6]
+        # Featured projects count varies by device (desktop: 6, mobile: 4)
+        # We infer "mobile" using User-Agent to avoid extra JS.
+        user_agent = (self.request.META.get("HTTP_USER_AGENT") or "").lower()
+        is_mobile = any(
+            token in user_agent
+            for token in [
+                "iphone", "ipad", "ipod",
+                "android", "mobile",
+                "blackberry", "windows phone",
+            ]
+        )
+        featured_limit = 4 if is_mobile else 6
+        context["featured_projects"] = Project.objects.filter(is_featured=True)[:featured_limit]
+
         context["featured_skills"] = Skill.objects.filter(is_featured=True)[:12]
         context["featured_blog"] = Blog.objects.filter(is_published=True, is_featured=True).first()
         context["recent_blog"] = Blog.objects.filter(is_published=True)[:3]
         context["social_links"] = SocialLink.objects.filter(is_active=True)
         context["experiences"] = Experience.objects.all()[:5]
-        context["certifications"] = Certification.objects.all()[:8]
+        # Certifications count varies by device (desktop: 8, mobile: 4)
+        context["certifications"] = Certification.objects.all()[: (4 if is_mobile else 8)]
+
 
         # Landing image (admin-uploadable)
         context["landing_profile_image"] = SiteConfiguration.objects.first()
