@@ -22,7 +22,7 @@
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div>
               <strong>{{ e.title }}</strong>
-              <div style="color:var(--text-secondary);">{{ e.company_or_issuer }} — {{ e.get_experience_type_display }}</div>
+              <div style="color:var(--text-secondary);">Organization: {{ e.company_or_issuer }} — {{ e.get_experience_type_display }}</div>
             </div>
             <div style="color:var(--text-secondary);">{% if e.start_date %}{{ e.start_date|date:"M Y" }}{% endif %} — {% if e.end_date %}{{ e.end_date|date:"M Y" }}{% else %}{% if e.is_current %}Present{% endif %}{% endif %}</div>
           </div>

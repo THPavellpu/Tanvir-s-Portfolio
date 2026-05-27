@@ -17,9 +17,15 @@
       </div>
 
       <div class="hero-social">
-        <a class="social-icon" href="https://github.com/THPavellpu" target="_blank" rel="noopener" aria-label="GitHub">GH</a>
-        <a class="social-icon" href="https://www.linkedin.com/in/tanvir-pavel/" target="_blank" rel="noopener" aria-label="LinkedIn">in</a>
-        <a class="social-icon email-copy" href="#" data-email="tanvirhossenpavel2018@gmail.com" aria-label="Email">@</a>
+        <a class="social-icon" href="https://github.com/THPavellpu" target="_blank" rel="noopener" aria-label="GitHub">
+          <img src="{% static 'images/github-sign.png' %}" alt="GitHub" />
+        </a>
+        <a class="social-icon" href="https://www.linkedin.com/in/tanvir-pavel/" target="_blank" rel="noopener" aria-label="LinkedIn">
+          <img src="{% static 'images/linkedin.png' %}" alt="LinkedIn" />
+        </a>
+        <a class="social-icon email-copy" href="#" data-email="tanvirhossenpavel2018@gmail.com" aria-label="Email">
+          <img src="{% static 'images/gmail.png' %}" alt="Email" />
+        </a>
       </div>
     </div>
 
@@ -135,7 +141,7 @@
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div>
               <h3 style="margin:0;">{{ e.title }}</h3>
-              <div style="color:var(--text-tertiary);">{{ e.company_or_issuer }} · {{ e.get_experience_type_display }}</div>
+              <div style="color:var(--text-tertiary);">Organization: {{ e.company_or_issuer }} · {{ e.get_experience_type_display }}</div>
             </div>
             <div style="text-align:right;color:var(--text-secondary);">{% if e.start_date %}{{ e.start_date|date:"M Y" }}{% endif %} — {% if e.end_date %}{{ e.end_date|date:"M Y" }}{% else %}{% if e.is_current %}Present{% endif %}{% endif %}</div>
           </div>
