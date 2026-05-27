@@ -169,50 +169,63 @@ class ResumeView(TemplateView):
 
 
 def ResumeDownloadView(request):
-    """Handle resume file download from Cloudinary with proper headers."""
-    from django.http import HttpResponse
+    """Handle resume file download - supports local files and Cloudinary."""
+    from django.http import HttpResponse, FileResponse
+    from django.conf import settings
+    import os
     import urllib.request
+    from pathlib import Path
     
     resume = Resume.objects.filter(is_current=True).first()
-    if not resume or not resume.file:
-        return redirect("/resume/")
-
-    try:
-        # Get the file URL (either Cloudinary or local)
-        file_url = resume.file.url
-        
-        # If it's a Cloudinary URL, ensure attachment flag is set for download
-        if "cloudinary" in file_url:
-            # Add fl_attachment to force browser download
-            if "upload/" in file_url and "fl_attachment" not in file_url:
-                file_url = file_url.replace("upload/", "upload/fl_attachment/")
+    
+    # Try to serve local resume file first
+    local_resume_path = os.path.join(settings.MEDIA_ROOT, 'resume', 'Resume26.pdf')
+    if os.path.exists(local_resume_path):
+        try:
+            with open(local_resume_path, 'rb') as f:
+                response = FileResponse(f, content_type='application/pdf')
+                response['Content-Disposition'] = 'attachment; filename="Resume.pdf"'
+                return response
+        except Exception as e:
+            print(f"Error serving local resume: {str(e)}")
+    
+    # Fallback: Try to serve from Resume model
+    if resume and resume.file:
+        try:
+            file_url = resume.file.url
             
-            # Stream the file from Cloudinary with proper headers
-            try:
-                req = urllib.request.Request(file_url)
-                with urllib.request.urlopen(req, timeout=30) as response:
-                    file_content = response.read()
-                    content_type = response.headers.get('content-type', 'application/octet-stream')
+            # If it's a Cloudinary URL, ensure attachment flag is set for download
+            if "cloudinary" in file_url:
+                # Add fl_attachment to force browser download
+                if "upload/" in file_url and "fl_attachment" not in file_url:
+                    file_url = file_url.replace("upload/", "upload/fl_attachment/")
                 
-                # Create HttpResponse with proper headers for download
-                filename = resume.title or "resume.pdf"
-                if not filename.endswith(('.pdf', '.doc', '.docx')):
-                    filename += ".pdf"
-                
-                django_response = HttpResponse(file_content, content_type=content_type)
-                django_response['Content-Disposition'] = f'attachment; filename="{filename}"'
-                return django_response
-            except urllib.error.URLError:
-                # If direct fetch fails, redirect to the URL
-                return redirect(file_url)
-        
-        # Fallback to simple redirect for non-Cloudinary URLs
-        return redirect(file_url)
-        
-    except Exception as e:
-        # Log the error and redirect back to resume page
-        print(f"Resume download error: {str(e)}")
-        return redirect("/resume/")
+                # Stream the file from Cloudinary with proper headers
+                try:
+                    req = urllib.request.Request(file_url)
+                    with urllib.request.urlopen(req, timeout=30) as response:
+                        file_content = response.read()
+                        content_type = response.headers.get('content-type', 'application/octet-stream')
+                    
+                    # Create HttpResponse with proper headers for download
+                    filename = resume.title or "resume.pdf"
+                    if not filename.endswith(('.pdf', '.doc', '.docx')):
+                        filename += ".pdf"
+                    
+                    django_response = HttpResponse(file_content, content_type=content_type)
+                    django_response['Content-Disposition'] = f'attachment; filename="{filename}"'
+                    return django_response
+                except urllib.error.URLError:
+                    # If direct fetch fails, redirect to the URL
+                    return redirect(file_url)
+            
+            # Fallback to simple redirect for non-Cloudinary URLs
+            return redirect(file_url)
+        except Exception as e:
+            print(f"Resume download error: {str(e)}")
+    
+    # No resume found
+    return redirect("/resume/")
 
 
 class ContactFormView(FormView):
